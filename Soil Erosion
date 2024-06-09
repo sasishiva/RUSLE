@@ -1,0 +1,43 @@
+// Define the region of interest (study area)
+var region = ee.FeatureCollection(geometry/asset);
+var zoomLevel = 8;  // Define an appropriate zoom level
+
+// Center the map on the region
+Map.centerObject(region, zoomLevel);
+
+// Load custom datasets for each RUSLE factor
+var R = ee.Image('users/your_username/R_factor');  // Replace with your actual asset path
+var K = ee.Image('users/your_username/K_factor');  // Replace with your actual asset path
+var LS = ee.Image('users/your_username/LS_factor');  // Replace with your actual asset path
+var C = ee.Image('users/your_username/C_factor');  // Replace with your actual asset path
+var P = ee.Image('users/your_username/P_factor');  // Replace with your actual asset path
+
+// Ensure the datasets are clipped to the region of interest
+R = R.clip(region);
+K = K.clip(region);
+LS = LS.clip(region);
+C = C.clip(region);
+P = P.clip(region);
+
+// Calculate RUSLE
+var rusle = R.multiply(K).multiply(LS).multiply(C).multiply(P).rename('RUSLE');
+
+// Add layers to the map
+Map.addLayer(R, {min: 0, max: 500}, 'R Factor');
+Map.addLayer(K, {min: 0, max: 0.1}, 'K Factor');
+Map.addLayer(LS, {min: 0, max: 10}, 'LS Factor');
+Map.addLayer(C, {min: 0, max: 1}, 'C Factor');
+Map.addLayer(P, {min: 0, max: 1}, 'P Factor');
+Map.addLayer(rusle, {min: 0, max: 50}, 'RUSLE');
+
+// Print the RUSLE result to the console
+print('RUSLE', rusle);
+
+// Optionally export the RUSLE result to your GEE assets or Google Drive
+Export.image.toDrive({
+  image: rusle,
+  description: 'RUSLE_export',
+  scale: 30,  // Adjust the scale as needed
+  region: region.geometry().bounds(),
+  maxPixels: 1e9
+});
